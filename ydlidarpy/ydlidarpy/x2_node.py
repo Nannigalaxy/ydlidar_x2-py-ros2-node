@@ -6,24 +6,24 @@ from sensor_msgs.msg import LaserScan
 from tf2_ros import StaticTransformBroadcaster
 from geometry_msgs.msg import TransformStamped
 import serial
-
 from ydlidar_driver import YDLidarX2
 
 # =============================================================================
-TOPIC         = "scan"
-FRAME_ID      = "laser"
-NODE_NAME     = "ydlidar_x2"
-QOS_DEPTH     = 10
-MIN_RANGE     = 0.01
-MAX_RANGE     = 8.0
-ANGLE_MIN     = 0.0
-ANGLE_MAX     = 2 * math.pi
-NUM_BINS      = 360
-SCAN_HZ       = 7.0
+TOPIC          = "scan"
+FRAME_ID       = "laser"
+NODE_NAME      = "ydlidar_x2"
+QOS_DEPTH      = 10
+MIN_RANGE      = 0.01
+MAX_RANGE      = 8.0
+ANGLE_MIN      = 0.0
+ANGLE_MAX      = 2 * math.pi
+NUM_BINS       = 360
+SCAN_HZ        = 7.0
 # =============================================================================
 
 
 class YDLidarNode(Node):
+
     def __init__(self):
         super().__init__(NODE_NAME)
 
@@ -45,15 +45,20 @@ class YDLidarNode(Node):
             reliability=ReliabilityPolicy.BEST_EFFORT,
             durability=DurabilityPolicy.VOLATILE,
         )
-        self.pub = self.create_publisher(LaserScan, self.get_parameter("topic").value, qos)
+
+        self.pub = self.create_publisher(
+            LaserScan,
+            self.get_parameter("topic").value,
+            qos,
+        )
 
         # Static TF map → laser
         self._tf_broadcaster = StaticTransformBroadcaster(self)
         tf = TransformStamped()
-        tf.header.stamp            = self.get_clock().now().to_msg()
-        tf.header.frame_id         = "map"
-        tf.child_frame_id          = self.frame_id
-        tf.transform.rotation.w    = 1.0
+        tf.header.stamp         = self.get_clock().now().to_msg()
+        tf.header.frame_id      = "map"
+        tf.child_frame_id       = self.frame_id
+        tf.transform.rotation.w = 1.0
         self._tf_broadcaster.sendTransform(tf)
 
         self.lidar = YDLidarX2(
@@ -63,10 +68,15 @@ class YDLidarNode(Node):
             max_dist=self.max_range * 1000,
         )
 
-        # Persistent range buffer — old points stay until overwritten
-        self._ranges = [float('inf')] * NUM_BINS
+        # Working buffer for the rotation currently being assembled.
+        # Swapped out atomically when a frame-start signal arrives.
+        self._pending = [float('inf')] * NUM_BINS
+
+        self._rotation_complete = False
 
         self.get_logger().info(f"YDLidar X2 node started on {port}")
+
+    # -------------------------------------------------------------------------
 
     def spin_scan(self):
         while True:
@@ -76,13 +86,25 @@ class YDLidarNode(Node):
                 self.get_logger().error(f"Lidar read failed: {e}")
                 break
 
+            # Read the frame-start flag directly from the packet header
+            # CT byte is at index 2, LSB = 1 means start of new rotation.
+            # This is checked BEFORE parse_packet filters any points out,
+            # so we never miss a rotation boundary due to empty point lists.
+            is_frame_start = bool(packet[2] & 0x01)
+
+            if is_frame_start:
+                if self._rotation_complete:
+                    self._publish(self._pending)
+                self._pending = [float('inf')] * NUM_BINS
+                self._rotation_complete = True
+
             for angle, distance, _ in self.lidar.parse_packet(packet):
-                idx = int(angle) % NUM_BINS
-                self._ranges[idx] = distance / 1000.0
+                idx = round(angle) % NUM_BINS
+                self._pending[idx] = distance / 1000.0
 
-            self._publish()  # once per packet, not per point
+    # -------------------------------------------------------------------------
 
-    def _publish(self):
+    def _publish(self, ranges):
         msg = LaserScan()
         msg.header.stamp    = self.get_clock().now().to_msg()
         msg.header.frame_id = self.frame_id
@@ -93,9 +115,11 @@ class YDLidarNode(Node):
         msg.scan_time       = 1.0 / SCAN_HZ
         msg.range_min       = self.min_range
         msg.range_max       = self.max_range
-        msg.ranges          = list(self._ranges)   # copy — don't hand the live buffer to ROS
+        msg.ranges          = list(ranges) 
         self.pub.publish(msg)
 
+
+# =============================================================================
 
 def main():
     rclpy.init()
