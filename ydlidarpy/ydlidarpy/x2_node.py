@@ -98,9 +98,9 @@ class YDLidarNode(Node):
                 self._pending = [float('inf')] * NUM_BINS
                 self._rotation_complete = True
 
-            for angle, distance, _ in self.lidar.parse_packet(packet):
-                idx = round(angle) % NUM_BINS
-                self._pending[idx] = distance / 1000.0
+            for scan_point in self.lidar.parse_packet(packet):
+                idx = round(scan_point.angle) % NUM_BINS
+                self._pending[idx] = scan_point.distance / 1000.0  # Convert mm to meters
 
     # -------------------------------------------------------------------------
 

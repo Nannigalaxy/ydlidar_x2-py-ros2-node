@@ -19,6 +19,7 @@ import math
 import struct
 import threading
 import logging
+from dataclasses import dataclass
 
 import serial
 
@@ -26,6 +27,14 @@ log = logging.getLogger(__name__)
 
 _UNPACK_H  = struct.Struct("<H")
 _UNPACK_2H = struct.Struct("<HH")
+
+
+@dataclass
+class LidarScan:
+    """Represents a single lidar measurement point."""
+    angle: float
+    distance: float
+    is_frame_start: bool
 
 
 class YDLidarX2:
@@ -221,7 +230,11 @@ class YDLidarX2:
 
             # Only the very first point of the packet carries is_frame_start.
             # All subsequent points in the same packet are normal samples.
-            points.append((angle, distance, is_start and i == 0))
+            points.append(LidarScan(
+                angle=angle,
+                distance=distance,
+                is_frame_start=is_start and i == 0
+            ))
 
         return points
 
@@ -260,10 +273,10 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     with YDLidarX2() as lidar:
         try:
-            for angle, distance, is_start in lidar.scan():
+            for scan_point in lidar.scan():
                 print(
-                    f"{'[START] ' if is_start else ''}"
-                    f"{angle:.2f}°  {distance:.1f} mm"
+                    f"{'[START] ' if scan_point.is_frame_start else ''}"
+                    f"{scan_point.angle:.2f}°  {scan_point.distance:.1f} mm"
                 )
         except KeyboardInterrupt:
             pass
