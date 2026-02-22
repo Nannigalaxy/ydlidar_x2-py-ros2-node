@@ -1,17 +1,11 @@
-# ydlidarpy
+# YDLIDAR X2 ROS 2 Driver
 
 A minimal ROS 2 Python driver for the YDLIDAR X2 2D LiDAR. No SDK dependency, communicates directly over serial using the X2 development manual protocol.
 
+![Screenshot in Rviz2](viz_screenshot.png)
 ---
 
-## Requirements
 
-- ROS 2 (Tested only on Humble)
-- Python 3.10
-
-```bash
-pip install -r requirements.txt   # pyserial
-```
 
 ---
 
@@ -35,6 +29,17 @@ The X2 starts ranging and streaming automatically on power-up, no start command 
 ---
 
 ## Build & Install
+
+### Requirements
+
+- ROS 2 (Tested only on Humble)
+- Python 3.10
+
+```bash
+pip install -r requirements.txt   # pyserial and colcon
+```
+
+## Build
 
 ```bash
 cd <your_ws>
@@ -168,6 +173,11 @@ with YDLidarX2() as lidar:
 ```python
 print(lidar.stats)
 # {'packets_ok': 1482, 'packets_bad_cs': 1, 'serial_errors': 0}
+```
+
+### Check topic publishing frequency
+```bash
+ros2 topic hz /scan
 ```
 
 ### Scan has gaps / missing sectors
