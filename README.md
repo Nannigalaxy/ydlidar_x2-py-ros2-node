@@ -1,10 +1,9 @@
-# YDLIDAR X2 ROS 2 Driver
+# YDLIDAR X2 Driver & ROS 2 Node
 
-A minimal ROS 2 Python driver for the YDLIDAR X2 2D LiDAR. No SDK dependency, communicates directly over serial using the X2 development manual protocol.
+A ROS 2 package for the YDLIDAR X2 2D LiDAR. Includes a pure-Python serial driver and a ROS 2 node.
 
 ![Screenshot in Rviz2](viz_screenshot.png)
 ---
-
 
 
 ---
