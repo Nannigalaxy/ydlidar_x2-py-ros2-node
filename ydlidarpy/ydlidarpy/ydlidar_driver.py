@@ -1,27 +1,35 @@
 # =============================================================================
 # YDLidar X2 Driver
 # =============================================================================
-PORT           = "/dev/ttyUSB0"
-BAUDRATE       = 115200
-TIMEOUT        = 1.0
-HEADER         = b'\xAA\x55'
-DIST_SCALE     = 4.0
-ANGLE_SCALE    = 64.0
-ANG_CORR_A     = 21.8
-ANG_CORR_B     = 155.3
-MIN_DIST       = 0.0
-MAX_DIST       = float('inf')
-READ_BUF_SIZE  = 4096
-MAX_ANGLE_STEP = 5.0
-# =============================================================================
 
 import math
 import struct
 import threading
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 
+import yaml
 import serial
+
+# Load configuration from YAML
+_config_path = Path(__file__).parent.parent / "config" / "config.yaml"
+with open(_config_path, "r") as f:
+    _config = yaml.safe_load(f)
+
+PORT           = _config["port"]
+BAUDRATE       = _config["baudrate"]
+TIMEOUT        = _config["timeout"]
+HEADER         = bytes(_config["header"])
+DIST_SCALE     = _config["dist_scale"]
+ANGLE_SCALE    = _config["angle_scale"]
+ANG_CORR_A     = _config["ang_corr_a"]
+ANG_CORR_B     = _config["ang_corr_b"]
+MIN_DIST       = _config["min_dist"]
+MAX_DIST       = _config["max_dist"]
+READ_BUF_SIZE  = _config["read_buf_size"]
+MAX_ANGLE_STEP = _config["max_angle_step"]
+# =============================================================================
 
 log = logging.getLogger(__name__)
 

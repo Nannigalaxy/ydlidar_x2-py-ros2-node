@@ -6,19 +6,26 @@ from sensor_msgs.msg import LaserScan
 from tf2_ros import StaticTransformBroadcaster
 from geometry_msgs.msg import TransformStamped
 import serial
+from pathlib import Path
+import yaml
 from ydlidar_driver import YDLidarX2
 
+# Load configuration from YAML
+_config_path = Path(__file__).parent.parent / "config" / "config.yaml"
+with open(_config_path, "r") as f:
+    _config = yaml.safe_load(f)
+
 # =============================================================================
-TOPIC          = "scan"
-FRAME_ID       = "laser"
-NODE_NAME      = "ydlidar_x2"
-QOS_DEPTH      = 10
-MIN_RANGE      = 0.01
-MAX_RANGE      = 8.0
-ANGLE_MIN      = 0.0
-ANGLE_MAX      = 2 * math.pi
-NUM_BINS       = 360
-SCAN_HZ        = 7.0
+TOPIC          = _config["topic"]
+FRAME_ID       = _config["frame_id"]
+NODE_NAME      = _config["node_name"]
+QOS_DEPTH      = _config["qos_depth"]
+MIN_RANGE      = _config["min_range"]
+MAX_RANGE      = _config["max_range"]
+ANGLE_MIN      = _config["angle_min"]
+ANGLE_MAX      = _config["angle_max"]
+NUM_BINS       = _config["num_bins"]
+SCAN_HZ        = _config["scan_hz"]
 # =============================================================================
 
 

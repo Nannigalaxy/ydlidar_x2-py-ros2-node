@@ -1,0 +1,41 @@
+# =============================================================================
+# YDLidar X2 Configuration
+# =============================================================================
+
+# Serial Port Settings
+port: "/dev/ttyUSB0"
+baudrate: 115200
+timeout: 1.0
+
+# Protocol Settings
+header: [0xAA, 0x55]
+dist_scale: 4.0
+angle_scale: 64.0
+ang_corr_a: 21.8
+ang_corr_b: 155.3
+
+# Distance Filtering
+min_dist: 0.0
+max_dist: .inf
+max_angle_step: 5.0
+
+# ROS2 Node Settings
+node_name: "ydlidar_x2"
+frame_id: "laser"
+topic: "scan"
+qos_depth: 10
+
+# Lidar Range Settings
+min_range: 0.01
+max_range: 8.0
+
+# Scan Parameters
+angle_min: 0.0
+angle_max: 6.283185307179586  # 2π radians
+num_bins: 360
+scan_hz: 7.0
+
+# Buffer Settings
+read_buf_size: 4096
+
+# =============================================================================
